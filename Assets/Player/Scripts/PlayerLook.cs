@@ -1,14 +1,16 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Player.Scripts
 {
     public class PlayerLook : MonoBehaviour
     {
         [Header("Settings", order = 0)]
-        public float mouseSensitivityMultiplicator = 1f;
+        public float mouseSensitivityMultiplier = 1f;
         
+        [FormerlySerializedAs("_mainCameraHolder")]
         [Header("Components", order = 1)]
-        private Camera _mainCamera;
+        [SerializeField] private Transform mainCameraHolder;
 
         [Header("Look Variables", order = 2)]
         private const float mouseSensitivityX = 300f;
@@ -17,11 +19,6 @@ namespace Player.Scripts
         private float _inputY;
         private float _xRotation;
     
-        private void Awake()
-        {
-            _mainCamera = Camera.main;
-        }
-
         private void Start()
         {
             Cursor.lockState = CursorLockMode.Locked;
@@ -31,8 +28,8 @@ namespace Player.Scripts
 
         private void Update()
         {
-            _inputX = Input.GetAxisRaw("Mouse X") * mouseSensitivityX * mouseSensitivityMultiplicator * Time.deltaTime;
-            _inputY = Input.GetAxisRaw("Mouse Y") * mouseSensitivityY * mouseSensitivityMultiplicator * Time.deltaTime;
+            _inputX = Input.GetAxisRaw("Mouse X") * mouseSensitivityX * mouseSensitivityMultiplier * Time.deltaTime;
+            _inputY = Input.GetAxisRaw("Mouse Y") * mouseSensitivityY * mouseSensitivityMultiplier * Time.deltaTime;
             Rotate();
         }
 
@@ -40,7 +37,7 @@ namespace Player.Scripts
         {
             _xRotation                          -= _inputY;
             _xRotation                          =  Mathf.Clamp(_xRotation, -90f, 90f);
-            _mainCamera.transform.localRotation =  Quaternion.Euler(new Vector3(_xRotation, 0f, 0f));
+            mainCameraHolder.localRotation =  Quaternion.Euler(new Vector3(_xRotation, 0f, 0f));
             transform.Rotate(Vector3.up, _inputX);
         }
     }
