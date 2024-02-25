@@ -8,7 +8,6 @@ namespace Player.Scripts
         [Header("Settings", order = 0)]
         public float mouseSensitivityMultiplier = 1f;
         
-        [FormerlySerializedAs("_mainCameraHolder")]
         [Header("Components", order = 1)]
         [SerializeField] private Transform mainCameraHolder;
 
