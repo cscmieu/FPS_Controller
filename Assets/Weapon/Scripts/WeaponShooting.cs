@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using JetBrains.Annotations;
 using TMPro;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -10,12 +12,14 @@ namespace Weapon.Scripts
         [Header("Settings", order = 0)]
         [SerializeField] private bool showTracers = true;
 
-    [Header("Components")] 
+        [Header("Components")] 
         [SerializeField] private TMP_Text bulletCount;
-        [SerializeField] private GameObject bulletTracer;
-        private                  Camera     _mainCamera;
-        private                  Transform  _mainCameratransform;
-        private                  RaycastHit _targetHit;
+        [SerializeField] private TrailRenderer  bulletTracer;
+        [SerializeField] private ParticleSystem bulletImpactOnWall;
+        [SerializeField] private Transform      muzzlePoint;
+        private                  Camera         _mainCamera;
+        private                  Transform      _mainCameratransform;
+        private                  RaycastHit     _targetHit;
         //private LayerMask  _enemyLayer;
 
         [Header("Gun Variables")] 
@@ -31,8 +35,7 @@ namespace Weapon.Scripts
         private float   _reloadTimeInSeconds           = 2f;
         private float   _range                         = 100f;
         private bool    _isFullAuto                    = true;
-        private float   _bulletTracerFrequencyOutOf100 = 60f;
-        private Vector3 bulletImpactPoint;
+        private float   _bulletTracerFrequencyOutOf100 = 80f;
 
         [Header("Gun Status")]
         private bool _isShooting;
@@ -97,24 +100,33 @@ namespace Weapon.Scripts
             var x             = Random.Range(-_spreadRadiusAt10Meters, _spreadRadiusAt10Meters);
             var y             = Random.Range(-_spreadRadiusAt10Meters, _spreadRadiusAt10Meters);
             var shotDirection = _mainCameratransform.forward*10f + _mainCameratransform.right * x + _mainCameratransform.up * y;
-            bulletImpactPoint = _mainCameratransform.position + shotDirection * _range;
-            
+
             if (showTracers)
-                InstantiateTracer(bulletImpactPoint);
+            {
+                if (Random.Range(1, 101) > _bulletTracerFrequencyOutOf100) return;
+                var tracer = Instantiate(bulletTracer, muzzlePoint.position, Quaternion.identity);
+                StartCoroutine(InstantiateTracer(tracer, _mainCameratransform.position + shotDirection * _range));
+            }
+                
             
             if (Physics.Raycast(_mainCamera.transform.position, shotDirection.normalized, out _targetHit, _range))
             {
                 //Do the shoot thing
-                bulletImpactPoint = _targetHit.point;
+                Instantiate(bulletImpactOnWall, _targetHit.point, Quaternion.LookRotation(_targetHit.normal));
             }
         }
 
-        private void InstantiateTracer(Vector3 target)
+        private IEnumerator InstantiateTracer(TrailRenderer tracer, Vector3 target)
         {
-            var tracer = Instantiate(bulletTracer, _mainCameratransform.position, Quaternion.identity);
-            tracer.transform.LookAt(target);
-            tracer.transform.position = Vector3.Lerp(tracer.transform.position, target, .05f);
-            Destroy(tracer, 0.1f);
+            var time   = 0f;
+            while (time < 1f)
+            {
+                tracer.transform.position =  Vector3.Lerp(muzzlePoint.position, target, time);
+                time                            += Time.deltaTime / tracer.time;
+                yield return null;
+            }
+            tracer.transform.position = target;
+            Destroy(tracer, tracer.time);
         }
 
         private void ResetTimeBetweenShot()
